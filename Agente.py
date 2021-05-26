@@ -1,5 +1,3 @@
-#import Tablero as mundo
-#import time
 import copy
 
 
@@ -16,32 +14,11 @@ class Agente():
         self.beta = 9999
         self.mundo = None
 
-    def dibujarTablero(self):
-        acumulador = ""
-        i = 0
-        for key in self.mundo.keys():
-            if(i < 11):
-                acumulador += self.mundo[key]
-                i += 1
-            else:
-                acumulador += "\n"
-                i = 1
-                acumulador += self.mundo[key]
-        print(acumulador)
-
     def mover(self, mov):
         if(mov[0] + 1 == mov[1] - 1):
             self.mundo[mov[0] + 1] = "-"
         elif(mov[0] + 11 == mov[1] - 11):
             self.mundo[mov[0] + 11] = "|"
-        else:
-            return "Error"
-
-    def deshacerMov(self, mov):
-        if(mov[0] + 1 == mov[1] - 1):
-            self.mundo[mov[0] + 1] = " "
-        elif(mov[0] + 11 == mov[1] - 11):
-            self.mundo[mov[0] + 11] = " "
         else:
             return "Error"
 
@@ -260,7 +237,7 @@ class Agente():
                             return result
                 if(len(list(filter(lambda i: i == [mov, mov - 2]
                 or i == [mov - 2, mov], conexiones))) <= 0):
-                    if(self.mundo[mov - 1] == '|'):
+                    if(self.mundo[mov - 1] == '-'):
                         conexiones.append([mov, mov - 2])
                         result = self.busqueda(mov - 2, conexiones, "Azul")
                         if(result == "Azul"):
@@ -286,7 +263,7 @@ class Agente():
                             return result
                 if(len(list(filter(lambda i: i == [mov, mov - 2]
                 or i == [mov - 2, mov], conexiones))) <= 0):
-                    if(self.mundo[mov - 1] == '|'):
+                    if(self.mundo[mov - 1] == '-'):
                         conexiones.append([mov, mov - 2])
                         result = self.busqueda(mov - 2, conexiones, "Azul")
                         if(result == "Azul"):
@@ -345,7 +322,7 @@ class Agente():
                             return result
                 if(len(list(filter(lambda i: i == [mov, mov - 2]
                 or i == [mov - 2, mov], conexiones))) <= 0):
-                    if(self.mundo[mov - 1] == '|'):
+                    if(self.mundo[mov - 1] == '-'):
                         conexiones.append([mov, mov - 2])
                         result = self.busqueda(mov - 2, conexiones, "Azul")
                         if(result == "Azul"):
@@ -458,7 +435,7 @@ class Agente():
             elif(x == 99):
                 if(len(list(filter(lambda i: i == [x, x + 2]
                 or i == [x + 2, x], conexiones))) <= 0):
-                    if(self.mundo[x + 1] == '|'):
+                    if(self.mundo[x + 1] == '-'):
                         conexiones.append([x, x + 2])
                         result = self.busqueda(x + 2, conexiones, "Azul")
                         if(result != "" and result is not None):
@@ -519,88 +496,69 @@ class Agente():
                     i += 2
         return mov
 
-def escogerMov(agente):
-    agente2 = Agente(agente.color)
-    agente2.mundo = copy.copy(agente.mundo)
-    agente2 = alfa_beta(agente2, agente.color, {"Azul": "Rojo", "Rojo": "Azul"},
-    maxProf=3)
-    movVal = agente.movValidos(agente.color)
-    verificar = True
-    while(agente2.mejorEstado is not None):
-        if(agente2.color == agente.color):
-            for elem in movVal:
-                if elem == agente2.mejorEstado:
-                    verificar = False
-            if(verificar is True):
-                pass
-            elif(verificar is False):
-                agente.mover(agente2.mejorEstado)
-                return agente2.mejorEstado
-                #break
-        agente2 = agente2.siguienteEstado
+    def escogerMov(self):
+        agente2 = Agente(self.color)
+        agente2.mundo = copy.copy(self.mundo)
+        agente2 = self.alfa_beta(agente2, self.color, {"Azul": "Rojo", "Rojo": "Azul"},
+        maxProf=3)
+        movVal = self.movValidos(self.color)
+        verificar = True
+        while(agente2.mejorEstado is not None):
+            if(agente2.color == self.color):
+                for elem in movVal:
+                    if elem == agente2.mejorEstado:
+                        verificar = False
+                if(verificar is True):
+                    pass
+                elif(verificar is False):
+                    self.mover(agente2.mejorEstado)
+                    #print(agente2.valor)
+                    return agente2.mejorEstado, agente2.valor
+                    #break
+            agente2 = agente2.siguienteEstado
 
-def alfa_beta(agente, jugador, oponente, maxProf=3):
-    alpha, beta = (agente.alpha, agente.beta)
-    ganador = agente.fin_del_juego()
-    movVal = agente.movValidos(agente.color)
+    def alfa_beta(self, agente, jugador, oponente, maxProf=3):
+        alpha, beta = (agente.alpha, agente.beta)
+        ganador = agente.fin_del_juego()
+        movVal = agente.movValidos(agente.color)
 
-    if(agente.profundidad < maxProf and (ganador[0] is None or movVal != [])):
-        for move in movVal:
-            nextAgente = Agente(agente.color)
-            nextAgente.profundidad = agente.profundidad + 1
-            nextAgente.mundo = copy.copy(agente.mundo)
-            nextAgente.mover(move)
-            nextAgente.color = oponente[agente.color]
-            ganador = nextAgente.fin_del_juego()
-            if(ganador == jugador):
-                nextAgente.valor = ganador[1]
-            else:
-                nextAgente.valor = ganador[1]
-            nextAgente.alpha = alpha
-            nextAgente.beta = beta
-
-            alfa_beta(nextAgente, jugador, oponente, maxProf)
-
-            if(agente.color == "Azul"):
-                if((agente.siguienteEstado is None) or nextAgente.valor > agente.valor):
+        if(agente.profundidad < maxProf and (ganador[0] is None or movVal != [])):
+            for move in movVal:
+                nextAgente = Agente(agente.color)
+                nextAgente.profundidad = agente.profundidad + 1
+                nextAgente.mundo = copy.copy(agente.mundo)
+                nextAgente.mover(move)
+                nextAgente.color = oponente[agente.color]
+                ganador = nextAgente.fin_del_juego()
+                if(ganador[0] == "Azul"):
+                    nextAgente.valor = ganador[1]
                     agente.valor = nextAgente.valor
                     agente.siguienteEstado = nextAgente
                     agente.mejorEstado = move
+                    return agente
+                else:
+                    nextAgente.valor = ganador[1]
+                nextAgente.alpha = alpha
+                nextAgente.beta = beta
 
-                    alpha = max(alpha, agente.valor)
-                    if(agente.valor >= beta):
-                        return agente
-            else:
-                if((agente.siguienteEstado is None) or nextAgente.valor < agente.valor):
-                    agente.valor = nextAgente.valor
-                    agente.siguienteEstado = nextAgente
-                    agente.mejorEstado = move
+                self.alfa_beta(nextAgente, jugador, oponente, maxProf)
 
-                    beta = min(beta, agente.valor)
-                    if(agente.valor <= alpha):
-                        return agente
-    return agente
+                if(agente.color == "Azul"):
+                    if((agente.siguienteEstado is None) or nextAgente.valor > agente.valor):
+                        agente.valor = nextAgente.valor
+                        agente.siguienteEstado = nextAgente
+                        agente.mejorEstado = move
 
+                        alpha = max(alpha, agente.valor)
+                        if(agente.valor >= beta):
+                            return agente
+                else:
+                    if((agente.siguienteEstado is None) or nextAgente.valor < agente.valor):
+                        agente.valor = nextAgente.valor
+                        agente.siguienteEstado = nextAgente
+                        agente.mejorEstado = move
 
-"""a = Agente("Azul")
-
-tablero = {
-0: ' ', 1: '1', 2: ' ', 3: '1', 4: ' ', 5: '1', 6: ' ', 7: '1', 8: ' ', 9: '1', 10: ' ',
-11: '2', 12: ' ', 13: '2', 14: ' ', 15: '2', 16: ' ', 17: '2', 18: ' ', 19: '2', 20: ' ', 21: '2',
-22: ' ', 23: '1', 24: ' ', 25: '1', 26: ' ', 27: '1', 28: ' ', 29: '1', 30: ' ', 31: '1', 32: ' ',
-33: '2', 34: ' ', 35: '2', 36: ' ', 37: '2', 38: ' ', 39: '2', 40: ' ', 41: '2', 42: ' ', 43: '2',
-44: ' ', 45: '1', 46: ' ', 47: '1', 48: ' ', 49: '1', 50: ' ', 51: '1', 52: ' ', 53: '1', 54: ' ',
-55: '2', 56: ' ', 57: '2', 58: ' ', 59: '2', 60: ' ', 61: '2', 62: ' ', 63: '2', 64: ' ', 65: '2',
-66: ' ', 67: '1', 68: ' ', 69: '1', 70: ' ', 71: '1', 72: ' ', 73: '1', 74: ' ', 75: '1', 76: ' ',
-77: '2', 78: ' ', 79: '2', 80: ' ', 81: '2', 82: ' ', 83: '2', 84: ' ', 85: '2', 86: ' ', 87: '2',
-88: ' ', 89: '1', 90: ' ', 91: '1', 92: ' ', 93: '1', 94: ' ', 95: '1', 96: ' ', 97: '1', 98: ' ',
-99: '2', 100: ' ', 101: '2', 102: ' ', 103: '2', 104: ' ', 105: '2', 106: ' ', 107: '2', 108: ' ', 109: '2',
-110: ' ', 111: '1', 112: ' ', 113: '1', 114: ' ', 115: '1', 116: ' ', 117: '1', 118: ' ', 119: '1'}
-a.mundo = tablero
-#print(a.fin_del_juego())
-while(True):
-    a.dibujarTablero()
-    mov1 = int(input("Movimiento de usuario del primer elemento: "))
-    mov2 = int(input("Movimiento de usuario del segundo elemento: "))
-    a.mover(list(sorted([mov1, mov2])))
-    escogerMov(a)"""
+                        beta = min(beta, agente.valor)
+                        if(agente.valor <= alpha):
+                            return agente
+        return agente
